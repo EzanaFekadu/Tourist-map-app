@@ -568,6 +568,7 @@
                     <button class="layer-btn" data-layer="satellite">🛰️ Satellite</button>
                     <button class="layer-btn" data-layer="terrain">⛰️ Terrain</button>
                     <button class="layer-btn" data-layer="traffic">🚦 Traffic</button>
+                    <button class="layer-btn" data-layer="transit">🚋 Transit</button>
                 </div>
             </div>
 
@@ -650,14 +651,43 @@
             terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | © <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
             }),
-            traffic: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            })
+            traffic: L.tileLayer('https://api.maptiler.com/maps/traffic/{z}/{x}/{y}.png?key=YOUR_MAPTILER_KEY', {
+                attribution: 'MapTiler Traffic © MapTiler',
+                maxZoom: 20
+            }),
+            transit: null, // We'll manage this with dynamic markers
         };
 
         // Set default layer
         layers.standard.addTo(map);
         let currentLayer = 'standard';
+
+        let transitMarkers = [];
+
+        async function showTransitStops(lat, lng, radius = 1000) {
+            // Remove old markers
+            transitMarkers.forEach(marker => map.removeLayer(marker));
+            transitMarkers = [];
+        
+            // Query Transitland for stops near the center of the map
+            const url = `https://transit.land/api/v2/rest/stops?lat=${lat}&lon=${lng}&r=${radius}`;
+            const response = await fetch(url);
+            if (!response.ok) return;
+            const data = await response.json();
+        
+            if (data.stops) {
+                data.stops.forEach(stop => {
+                    const coords = stop.geometry.coordinates;
+                    const marker = L.circleMarker([coords[1], coords[0]], {
+                        radius: 5,
+                        color: 'purple',
+                        fillColor: 'white',
+                        fillOpacity: 0.9
+                    }).bindPopup(`<b>${stop.name}</b>`).addTo(map);
+                    transitMarkers.push(marker);
+                });
+            }
+        }
 
         // Route planning variables
         let routeControl;
@@ -680,9 +710,20 @@
                 btn.classList.add('active');
                 
                 const layerType = btn.dataset.layer;
-                map.removeLayer(layers[currentLayer]);
-                layers[layerType].addTo(map);
-                currentLayer = layerType;
+                if (currentLayer === 'transit') {
+                    // Remove transit markers when leaving the transit layer
+                    transitMarkers.forEach(marker => map.removeLayer(marker));
+                }
+                if (layerType === 'transit') {
+                    // Show transit stops near map center
+                    const center = map.getCenter();
+                    showTransitStops(center.lat, center.lng);
+                    currentLayer = 'transit';
+                } else {
+                    map.removeLayer(layers[currentLayer]);
+                    layers[layerType].addTo(map);
+                    currentLayer = layerType;
+                }
                 
                 // Simulate traffic overlay for traffic layer
                 if (layerType === 'traffic') {
@@ -692,6 +733,13 @@
                     }, 500);
                 }
             });
+        });
+
+        map.on('moveend', function() {
+            if (currentLayer === 'transit') {
+                const center = map.getCenter();
+                showTransitStops(center.lat, center.lng);
+            }
         });
 
         // --- FIX 1: Remove duplicate marker logic and ensure only one attraction marker at a time ---
