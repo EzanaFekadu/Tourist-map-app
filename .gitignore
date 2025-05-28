@@ -1,0 +1,2 @@
+// config.js (do NOT commit this!)
+window.MAPTILER_KEY = "your-api-key";
