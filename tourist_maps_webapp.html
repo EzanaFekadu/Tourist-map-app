@@ -6,6 +6,9 @@
     <title>TouristMaps - Discover & Explore</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <style>
         * {
             margin: 0;
@@ -18,6 +21,11 @@
             background: #0f172a;
             color: #f8fafc;
             overflow: hidden;
+        }
+
+        body.light-mode {
+            background: #f8fafc;
+            color: #0f172a;
         }
 
         html, body {
@@ -105,10 +113,8 @@
         }
 
         .input-field:focus {
-            outline: none;
-            border-color: #3b82f6;
-            background: rgba(15, 23, 42, 0.8);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: 2px solid #3b82f6 !important;
+            outline-offset: 2px;
         }
 
         .route-options {
@@ -145,6 +151,21 @@
             text-align: center;
         }
 
+        body.light-mode .route-btn,
+        body.light-mode .transport-btn,
+        body.light-mode .layer-btn {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        body.light-mode .route-btn.active,
+        body.light-mode .transport-btn.active,
+        body.light-mode .layer-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) !important;
+            color: #fff !important;
+        }
+
         .route-btn:hover {
             background: rgba(59, 130, 246, 0.1);
             border-color: #3b82f6;
@@ -154,6 +175,43 @@
         .route-btn.active {
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             border-color: #3b82f6;
+            color: white;
+        }
+
+        .transport-options {
+            padding: 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .transport-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .transport-btn {
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .transport-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .transport-btn.active {
+            background: linear-gradient(135deg, #f59e42 0%, #f472b6 100%);
+            border-color: #f59e42;
             color: white;
         }
 
@@ -209,6 +267,12 @@
             transition: all 0.3s ease;
         }
 
+        body.light-mode .attraction-item {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+
         .attraction-item:hover {
             background: rgba(15, 23, 42, 0.8);
             border-color: rgba(59, 130, 246, 0.3);
@@ -230,9 +294,18 @@
             font-weight: 500;
         }
 
+        body.light-mode .attraction-type {
+            color: #3b82f6 !important;
+        }
+
         .attraction-distance {
             font-size: 11px;
             color: #94a3b8;
+        }
+
+        body.light-mode .attraction-distance,
+        body.light-mode .stat-label {
+            color: #64748b !important;
         }
 
         .map-container {
@@ -251,12 +324,23 @@
 
         .map-controls {
             position: absolute;
-            top: unset;
             bottom: 16px;
             right: 16px;
-            left: unset;
-            flex-direction: row;
-            gap: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1200;
+        }
+
+        @media (max-width: 768px) {
+            .map-controls {
+                flex-direction: row;
+                bottom: 16px;
+                right: 16px;
+                left: unset;
+                top: unset;
+                gap: 8px;
+            }
         }
 
         .control-btn {
@@ -445,12 +529,24 @@
         }
 
         .map-controls {
-            top: unset;
+            position: absolute;
             bottom: 16px;
             right: 16px;
-            left: unset;
-            flex-direction: row;
-            gap: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1200;
+        }
+
+        @media (max-width: 768px) {
+            .map-controls {
+                flex-direction: row;
+                bottom: 16px;
+                right: 16px;
+                left: unset;
+                top: unset;
+                gap: 8px;
+            }
         }
 
         .floating-panel {
@@ -528,6 +624,57 @@
                 display: none !important;
             }
         }
+
+        .recent-favorites {
+            padding: 20px 16px 0 16px;
+        }
+        .recent-item, .favorite-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15,23,42,0.5);
+            border-radius: 8px;
+            padding: 6px 12px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .recent-item:hover, .favorite-item:hover {
+            background: rgba(59,130,246,0.1);
+        }
+        .star-btn {
+            background: none;
+            border: none;
+            color: #f59e42;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .star-btn.filled {
+            color: #fbbf24;
+        }
+
+        @media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #map, #routePanel, #map * , #routePanel * {
+        visibility: visible !important;
+    }
+    #map {
+        position: absolute !important;
+        left: 0; top: 0; width: 100vw; height: 60vh !important;
+    }
+    #routePanel {
+        position: absolute !important;
+        left: 0; right: 0; bottom: 0; width: 100vw;
+        background: #fff !important;
+        color: #222 !important;
+        box-shadow: none !important;
+    }
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
@@ -538,44 +685,63 @@
                     🗺️ TouristMaps
                 </div>
                 <div class="tagline">Discover amazing places on your journey</div>
+                <button id="themeToggle" title="Toggle dark/light mode" style="float:right; background:none; border:none; font-size:20px; cursor:pointer; color:#f8fafc;">🌙</button>
             </div>
 
             <div class="search-section">
                 <div class="input-group">
-                    <label class="input-label">From</label>
+                    <label class="input-label" id="fromLabel">From</label>
                     <input type="text" class="input-field" id="fromInput" placeholder="Enter starting location">
                 </div>
                 <div class="input-group">
-                    <label class="input-label">To</label>
+                    <label class="input-label" id="toLabel">To</label>
                     <input type="text" class="input-field" id="toInput" placeholder="Enter destination">
                 </div>
             </div>
 
             <div class="route-options">
-                <div class="section-title">Route Type</div>
-                <div class="route-buttons">
-                    <button class="route-btn active" data-route="fastest">⚡ Fastest</button>
-                    <button class="route-btn" data-route="shortest">📏 Shortest</button>
-                    <button class="route-btn" data-route="scenic">🌄 Scenic</button>
-                    <button class="route-btn" data-route="tourist">🎯 Tourist</button>
+                <div class="section-title" id="routeTypeLabel">Route Type</div>
+                <div class="route-buttons" role="group" aria-label="Route type">
+                    <button class="route-btn active" data-route="fastest" id="fastestRouteBtn">⚡ Fastest</button>
+                    <button class="route-btn" data-route="shortest" id="shortestRouteBtn">📏 Shortest</button>
+                    <button class="route-btn" data-route="scenic" id="scenicRouteBtn">🌄 Scenic</button>
+                    <button class="route-btn" data-route="tourist" id="touristRouteBtn">🎯 Tourist</button>
+                </div>
+            </div>
+
+            <div class="transport-options">
+                <div class="section-title" id="transportModeLabel">Transport Mode</div>
+                <div class="transport-buttons" role="group" aria-label="Transport mode">
+                    <button class="transport-btn active" data-mode="driving" id="drivingTransportBtn">🚗 Driving</button>
+                    <button class="transport-btn" data-mode="walking" id="walkingTransportBtn">🚶 Walking</button>
+                    <button class="transport-btn" data-mode="cycling" id="cyclingTransportBtn">🚴 Cycling</button>
+                    <button class="transport-btn" data-mode="rail" id="railTransportBtn">🚆 Rail</button>
+                    <button class="transport-btn" data-mode="flying" id="flyingTransportBtn">✈️ Flying</button>
                 </div>
             </div>
 
             <div class="map-layers">
-                <div class="section-title">Map Layers</div>
+                <div class="section-title" id="mapLayersLabel">Map Layers</div>
                 <div class="layer-buttons">
-                    <button class="layer-btn active" data-layer="standard">🗺️ Standard</button>
-                    <button class="layer-btn" data-layer="satellite">🛰️ Satellite</button>
-                    <button class="layer-btn" data-layer="terrain">⛰️ Terrain</button>
-                    <button class="layer-btn" data-layer="traffic">🚦 Traffic</button>
-                    <button class="layer-btn" data-layer="transit">🚋 Transit</button>
+                    <button class="layer-btn active" data-layer="standard" id="standardLayerBtn">🗺️ Standard</button>
+                    <button class="layer-btn" data-layer="satellite" id="satelliteLayerBtn">🛰️ Satellite</button>
+                    <button class="layer-btn" data-layer="terrain" id="terrainLayerBtn">⛰️ Terrain</button>
+                    <button class="layer-btn" data-layer="traffic" id="trafficLayerBtn">🚦 Traffic</button>
+                    <button class="layer-btn" data-layer="transit" id="transitLayerBtn">🚋 Transit</button>
                 </div>
             </div>
 
             <div class="attractions">
-                <div class="section-title">Nearby Attractions</div>
+                <div class="section-title" id="nearbyAttractionsLabel">Nearby Attractions</div>
                 <div id="attractionsList">
                 </div>
+            </div>
+
+            <!-- Add after .search-section -->
+            <div class="recent-favorites">
+                <div class="section-title" id="recentFavoritesLabel">Recent & Favorites</div>
+                <div id="recentList"></div>
+                <div id="favoritesList"></div>
             </div>
         </div>
 
@@ -583,10 +749,9 @@
             <button class="mobile-toggle" id="mobileToggle" style="display: none;">☰</button>
             <div id="map"></div>
             
-            <div class="map-controls">
-                <button class="control-btn" id="locationBtn" title="My Location">📍</button>
-                <button class="control-btn" id="searchBtn" title="Search">🔍</button>
-                <button class="control-btn" id="layersBtn" title="Layers">🗂️</button>
+            <div class="map-controls" role="group" aria-label="Map controls">
+                <button class="control-btn" id="locationBtn" title="My Location" aria-label="My Location" tabindex="0">📍</button>
+                <button class="control-btn" id="weatherBtn" title="Show Weather" aria-label="Show Weather" tabindex="0">☁️</button>
             </div>
 
             <div class="floating-panel" id="routePanel">
@@ -609,14 +774,28 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
+                <button id="shareRouteBtn" class="control-btn" style="margin-top:12px;width:auto;padding:8px 18px;font-size:14px;">🔗 Share Route</button>
+                <!-- Add after the share button in .floating-panel -->
+                <button id="printRouteBtn" class="control-btn" style="margin-top:12px;width:auto;padding:8px 18px;font-size:14px;">🖨️ Print/Export</button>
+                <div id="waypointsContainer"></div>
+                <button id="addWaypointBtn" class="control-btn" style="margin:8px 0 0 0;width:auto;padding:8px 18px;font-size:14px;">➕ Add Stop</button>
             </div>
         </div>
     </div>
 
+    <div id="globalLoading" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:3000;background:rgba(15,23,42,0.5);align-items:center;justify-content:center;">
+    <div style="background:#fff;padding:24px 32px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);color:#3b82f6;font-size:18px;display:flex;align-items:center;gap:12px;">
+        <span class="spinner" style="width:24px;height:24px;border:3px solid #3b82f6;border-top:3px solid #f8fafc;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;"></span>
+        Loading...
+    </div>
+</div>
+<div id="weatherPanel" style="display:none;position:absolute;top:24px;right:24px;z-index:2001;background:rgba(15,23,42,0.97);color:#f8fafc;padding:18px 22px;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.18);min-width:180px;font-size:15px;"></div>
+
+    <script src="config.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
     <script>
-        // Define constants
+        // --- Constants ---
         const DEFAULT_LAT = 40.7128;
         const DEFAULT_LNG = -74.0060;
         const DEFAULT_ZOOM = 13;
@@ -637,100 +816,151 @@
         const POPUP_TEXT_SIZE = '12px';
         const POPUP_TEXT_MARGIN_TOP = '4px';
 
-        // Initialize the map
+        // --- Translations ---
+        const translations = {
+    en: {
+        from: "From",
+        to: "To",
+        routeType: "Route Type",
+        fastest: "⚡ Fastest",
+        shortest: "📏 Shortest",
+        scenic: "🌄 Scenic",
+        tourist: "🎯 Tourist",
+        transportMode: "Transport Mode",
+        driving: "🚗 Driving",
+        walking: "🚶 Walking",
+        cycling: "🚴 Cycling",
+        rail: "🚆 Rail",
+        flying: "✈️ Flying",
+        mapLayers: "Map Layers",
+        standard: "🗺️ Standard",
+        satellite: "🛰️ Satellite",
+        terrain: "⛰️ Terrain",
+        traffic: "🚦 Traffic",
+        transit: "🚋 Transit",
+        attractions: "Nearby Attractions",
+        recentFavorites: "Recent & Favorites",
+        shareRoute: "🔗 Share Route",
+        printExport: "🖨️ Print/Export",
+        addStop: "➕ Add Stop",
+        weather: "Weather",
+        myLocation: "My Location",
+        showWeather: "Show Weather"
+    },
+    es: {
+        from: "Desde",
+        to: "Hasta",
+        routeType: "Tipo de Ruta",
+        fastest: "⚡ Más rápida",
+        shortest: "📏 Más corta",
+        scenic: "🌄 Escénica",
+        tourist: "🎯 Turística",
+        transportMode: "Modo de Transporte",
+        driving: "🚗 Coche",
+        walking: "🚶 A pie",
+        cycling: "🚴 Bicicleta",
+        rail: "🚆 Tren",
+        flying: "✈️ Avión",
+        mapLayers: "Capas de Mapa",
+        standard: "🗺️ Estándar",
+        satellite: "🛰️ Satélite",
+        terrain: "⛰️ Terreno",
+        traffic: "🚦 Tráfico",
+        transit: "🚋 Transporte",
+        attractions: "Atracciones Cercanas",
+        recentFavorites: "Recientes y Favoritos",
+        shareRoute: "🔗 Compartir Ruta",
+        printExport: "🖨️ Imprimir/Exportar",
+        addStop: "➕ Añadir Parada",
+        weather: "Clima",
+        myLocation: "Mi Ubicación",
+        showWeather: "Mostrar Clima"
+    }
+};
+
+        // --- Map Initialization ---
         const map = L.map('map').setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
 
-        // Map layers - All open source
         const layers = {
             standard: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }),
-            satellite: L.tileLayer('https://tiles.wmflabs.org/hillshading/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, hillshading by <a href="https://wmflabs.org/">Wikimedia Labs</a>'
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles © Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
             }),
             terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | © <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
             }),
-            traffic: L.tileLayer('https://api.maptiler.com/maps/traffic/{z}/{x}/{y}.png?key=YOUR_MAPTILER_KEY', {
-                attribution: 'MapTiler Traffic © MapTiler',
-                maxZoom: 20
-            }),
-            transit: null, // We'll manage this with dynamic markers
+            transit: null // Managed with dynamic markers
         };
 
-        // Set default layer
         layers.standard.addTo(map);
         let currentLayer = 'standard';
-
         let transitMarkers = [];
 
-        async function showTransitStops(lat, lng, radius = 1000) {
-            // Remove old markers
-            transitMarkers.forEach(marker => map.removeLayer(marker));
-            transitMarkers = [];
-        
-            // Query Transitland for stops near the center of the map
-            const url = `https://transit.land/api/v2/rest/stops?lat=${lat}&lon=${lng}&r=${radius}`;
-            const response = await fetch(url);
-            if (!response.ok) return;
-            const data = await response.json();
-        
-            if (data.stops) {
-                data.stops.forEach(stop => {
-                    const coords = stop.geometry.coordinates;
-                    const marker = L.circleMarker([coords[1], coords[0]], {
-                        radius: 5,
-                        color: 'purple',
-                        fillColor: 'white',
-                        fillOpacity: 0.9
-                    }).bindPopup(`<b>${stop.name}</b>`).addTo(map);
-                    transitMarkers.push(marker);
-                });
+        // --- Hide/disable traffic button ---
+        document.querySelectorAll('.layer-btn').forEach(btn => {
+            if (btn.dataset.layer === 'traffic') {
+                btn.disabled = true;
+                btn.style.opacity = 0.5;
+                btn.title = "No free, global, real-time traffic layer is available.";
             }
-        }
+        });
 
-        // Route planning variables
-        let routeControl;
-        let currentRoute = 'fastest';
-
-        // Event listeners for route buttons
-        document.querySelectorAll('.route-btn').forEach(btn => {
+        // --- Transport mode logic ---
+        let currentTransportMode = loadPreference('transportMode', 'driving');
+        document.querySelectorAll('.transport-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.route-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.transport-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                currentRoute = btn.dataset.route;
+                currentTransportMode = btn.dataset.mode;
+                savePreference('transportMode', currentTransportMode);
                 updateRoute();
             });
         });
 
-        // Event listeners for layer buttons
+        // --- Route type logic (for demonstration, just UI) ---
+        let currentRouteType = loadPreference('routeType', 'fastest');
+        document.querySelectorAll('.route-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.route-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentRouteType = btn.dataset.route;
+                savePreference('routeType', currentRouteType);
+                updateRoute();
+            });
+        });
+
+        // --- Layer button handlers ---
         document.querySelectorAll('.layer-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
                 const layerType = btn.dataset.layer;
+                savePreference('mapLayer', layerType);
                 if (currentLayer === 'transit') {
-                    // Remove transit markers when leaving the transit layer
                     transitMarkers.forEach(marker => map.removeLayer(marker));
                 }
+                if (layerType === 'traffic') {
+                    alert('No free, global, real-time traffic layer is available.');
+                    document.querySelectorAll('.layer-btn').forEach(b => {
+                        if (b.dataset.layer === currentLayer) b.classList.add('active');
+                        else b.classList.remove('active');
+                    });
+                    return;
+                }
                 if (layerType === 'transit') {
-                    // Show transit stops near map center
                     const center = map.getCenter();
                     showTransitStops(center.lat, center.lng);
                     currentLayer = 'transit';
                 } else {
-                    map.removeLayer(layers[currentLayer]);
-                    layers[layerType].addTo(map);
+                    if (layers[currentLayer] && map.hasLayer(layers[currentLayer])) {
+                        map.removeLayer(layers[currentLayer]);
+                    }
+                    if (layers[layerType]) {
+                        layers[layerType].addTo(map);
+                    }
                     currentLayer = layerType;
-                }
-                
-                // Simulate traffic overlay for traffic layer
-                if (layerType === 'traffic') {
-                    setTimeout(() => {
-                        // Add some visual indication of traffic (simplified)
-                        map.setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
-                    }, 500);
                 }
             });
         });
@@ -747,7 +977,7 @@
 
         // Attraction item click handlers
         document.querySelectorAll('.attraction-item').forEach((item, index) => {
-            item.addEventListener('click', () => {
+            item.addEventListener('click', async () => {
                 const attraction = attractions[index];
                 map.setView([attraction.lat, attraction.lng], 16);
 
@@ -880,15 +1110,7 @@
 
         // Route planning using OpenRouteService (open source routing)
         async function planRoute(from, to) {
-            document.getElementById('routePanel').style.display = 'block';
-            
-            // Animate progress bar
-            const progressFill = document.getElementById('progressFill');
-            progressFill.style.width = '0%';
-            setTimeout(() => {
-                progressFill.style.width = '100%';
-            }, 100);
-
+            showGlobalLoading(true);
             try {
                 // Geocode locations using Nominatim
                 const fromCoords = await geocodeLocation(from);
@@ -906,11 +1128,20 @@
                 }
 
                 // Create routing control with open-source routing
+                const allLocations = [from, ...waypoints.filter(wp => wp.trim()), to];
+                const coords = [];
+                for (let loc of allLocations) {
+                    const geo = await geocodeLocation(loc);
+                    if (!geo) {
+                        alert(`Could not find location: ${loc}`);
+                        showGlobalLoading(false);
+                        return;
+                    }
+                    coords.push(geo);
+                }
+
                 routeControl = L.Routing.control({
-                    waypoints: [
-                        L.latLng(fromCoords.lat, fromCoords.lng),
-                        L.latLng(toCoords.lat, toCoords.lng)
-                    ],
+                    waypoints: coords.map(c => L.latLng(c.lat, c.lng)),
                     routeWhileDragging: true,
                     addWaypoints: false,
                     createMarker: function(i, waypoint, n) {
@@ -952,16 +1183,22 @@
                 console.error('Routing error:', error);
                 document.getElementById('routePanel').style.display = 'none';
             }
+            showGlobalLoading(false);
         }
 
         // Map route types to OSRM profiles
-        function getOSRMProfile(routeType) {
-            switch(routeType) {
-                case 'fastest': return 'driving';
-                case 'shortest': return 'driving';
-                case 'scenic': return 'driving';
-                case 'tourist': return 'driving';
-                default: return 'driving';
+        function getOSRMProfile() {
+            switch(currentTransportMode) {
+                case 'walking': return 'foot';
+                case 'cycling': return 'bike';
+                case 'driving': return 'car';
+                case 'rail':
+                    alert('Rail routing is not supported in this demo. Using driving directions instead.');
+                    return 'car';
+                case 'flying':
+                    alert('Flying route is not supported. Showing straight line.');
+                    return null;
+                default: return 'car';
             }
         }
 
@@ -1089,8 +1326,20 @@
             if (query.includes('museum')) return '🏛️ Museum';
             if (query.includes('attraction')) return '🎯 Attraction';
             if (query.includes('park')) return '🌳 Park';
-            return '📍 Point of Interest';
+            return '📍';
         }
+
+        function getAttractionEmoji(type) {
+    if (type.includes('Museum')) return '🏛️';
+    if (type.includes('Park')) return '🌳';
+    if (type.includes('Entertainment')) return '🎭';
+    if (type.includes('Landmark')) return '🌉';
+    if (type.includes('Restaurant')) return '🍽️';
+    if (type.includes('Attraction')) return '🎯';
+    if (type.includes('Historic')) return '🏰';
+    if (type.includes('Viewpoint')) return '🌄';
+    return '📍';
+}
 
         function getAttractionIcon(tags) {
             if (tags.tourism === 'museum' || tags.tourism === 'gallery') return '🏛️ Museum';
@@ -1128,99 +1377,92 @@
 
         // Update attractions list dynamically with better error handling
         async function updateAttractionsList(lat, lng) {
-            const attractionsList = document.getElementById('attractionsList');
-            attractionsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">🔍 Discovering attractions...</div>';
-            
+            showGlobalLoading(true);
             try {
+                const attractionsList = document.getElementById('attractionsList');
+                attractionsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">🔍 Discovering attractions...</div>';
+                
                 const nearbyAttractions = await fetchNearbyAttractions(lat, lng);
                 attractionsList.innerHTML = '';
                 
                 if (nearbyAttractions && nearbyAttractions.length > 0) {
-                    nearbyAttractions.slice(0, 10).forEach((attraction, index) => {
-                        const item = document.createElement('div');
-                        item.className = 'attraction-item';
-                        item.innerHTML = `
-                            <div class="attraction-name">${attraction.name}</div>
-                            <div class="attraction-type">${attraction.type}</div>
-                            <div class="attraction-distance">${attraction.distance} away</div>
-                        `;
-                        item.addEventListener('click', () => {
-                            map.setView([attraction.lat, attraction.lng], 16);
+                    attractionCluster.clearLayers();
+nearbyAttractions.slice(0, 10).forEach((attraction, index) => {
+    const item = document.createElement('div');
+    item.className = 'attraction-item';
+    item.innerHTML = `
+        <div class="attraction-name">${attraction.name}</div>
+        <div class="attraction-type">${attraction.type}</div>
+        <div class="attraction-distance">${attraction.distance} away</div>
+        <button class="star-btn" title="Add to favorites">★</button>
+    `;
+    item.querySelector('.star-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveFavorite({
+            name: attraction.name,
+            lat: attraction.lat,
+            lng: attraction.lng
+        });
+        renderRecentAndFavorites();
+    });
 
-                            // Remove previous marker if exists
-                            if (currentAttractionMarker) {
-                                map.removeLayer(currentAttractionMarker);
-                            }
-                            // Add new marker
-                            currentAttractionMarker = L.marker([attraction.lat, attraction.lng], {
-                                isAttraction: true,
-                                icon: L.divIcon({
-                                    html: '📍',
-                                    className: 'attraction-marker',
-                                    iconSize: [20, 20]
-                                })
-                            }).addTo(map);
+    // Create a clustered marker with a custom emoji icon
+    const marker = L.marker([attraction.lat, attraction.lng], {
+        icon: L.divIcon({
+            html: getAttractionEmoji(attraction.type),
+            className: 'attraction-marker',
+            iconSize: [24, 24]
+        })
+    });
 
-                            currentAttractionMarker.bindPopup(`
-                                <div class="popup-title">${attraction.name}</div>
-                                <div>${attraction.type}</div>
-                                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${attraction.distance} away</div>
-                            `).openPopup();
+    // Wikipedia-enhanced popup
+    marker.on('click', async () => {
+        marker.bindPopup(`
+            <div class="popup-title">${attraction.name}</div>
+            <div>${attraction.type}</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${attraction.distance} away</div>
+            <div style="color:#64748b;font-size:12px;margin-top:8px;">Loading info...</div>
+        `).openPopup();
+        const wiki = await fetchWikipediaSummary(attraction.name);
+        let extra = '';
+        if (wiki && (wiki.extract || wiki.image)) {
+            if (wiki.image) {
+                extra += `<img src="${wiki.image}" alt="${attraction.name}" style="width:100%;max-width:180px;border-radius:8px;margin:8px 0;">`;
+            }
+            if (wiki.extract) {
+                extra += `<div style="font-size:12px;color:#64748b;margin-top:4px;">${wiki.extract}</div>`;
+            }
+            if (wiki.url) {
+                extra += `<div style="margin-top:6px;"><a href="${wiki.url}" target="_blank" style="font-size:12px;color:#3b82f6;">Read more on Wikipedia</a></div>`;
+            }
+        } else {
+            extra += `<div style="font-size:12px;color:#64748b;margin-top:4px;">No extra info found.</div>`;
+        }
+        marker.setPopupContent(`
+            <div class="popup-title">${attraction.name}</div>
+            <div>${attraction.type}</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${attraction.distance} away</div>
+            ${extra}
+        `);
+    });
 
-                            // Chart route from user location to this attraction
-                            if (lastUserLocation) {
-                                if (routeControl) {
-                                    map.removeControl(routeControl);
-                                }
-                                routeControl = L.Routing.control({
-                                    waypoints: [
-                                        L.latLng(lastUserLocation.lat, lastUserLocation.lng),
-                                        L.latLng(attraction.lat, attraction.lng)
-                                    ],
-                                    routeWhileDragging: false,
-                                    addWaypoints: false,
-                                    createMarker: function(i, waypoint, n) {
-                                        return L.marker(waypoint.latLng, {
-                                            draggable: false,
-                                            icon: L.divIcon({
-                                                html: i === 0 ? '🚩' : '🏁',
-                                                className: 'route-marker',
-                                                iconSize: [20, 20]
-                                            })
-                                        });
-                                    },
-                                    lineOptions: {
-                                        styles: [{
-                                            color: '#3b82f6',
-                                            weight: 4,
-                                            opacity: 0.8
-                                        }]
-                                    },
-                                    router: L.Routing.osrmv1({
-                                        serviceUrl: 'https://router.project-osrm.org/route/v1',
-                                        profile: getOSRMProfile(currentRoute)
-                                    }),
-                                    show: false
-                                }).on('routesfound', function(e) {
-                                    const route = e.routes[0];
-                                    document.getElementById('routePanel').style.display = 'block';
-                                    document.getElementById('routeDistance').textContent = (route.summary.totalDistance / 1000).toFixed(1) + ' km';
-                                    document.getElementById('routeTime').textContent = Math.round(route.summary.totalTime / 60) + ' min';
-                                    document.getElementById('routeAttractions').textContent = '1';
-                                }).addTo(map);
-                            } else {
-                                alert('User location not found. Please click the 📍 button first.');
-                            }
-                        });
-                        attractionsList.appendChild(item);
-                    });
+    attractionCluster.addLayer(marker);
+
+    item.addEventListener('click', () => {
+        map.setView([attraction.lat, attraction.lng], 16);
+        marker.openPopup();
+    });
+
+    attractionsList.appendChild(item);
+});
                 } else {
                     attractionsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">🏞️ Move the map to discover attractions</div>';
                 }
             } catch (error) {
                 console.error('Error updating attractions:', error);
-                attractionsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">🔄 Unable to load attractions. Try moving the map.</div>';
+                attractionsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">❌ Unable to load attractions. Please check your connection or try again later.</div>';
             }
+            showGlobalLoading(false);
         }
 
         // --- FIX 2: Use the same marker logic in displayAttractions ---
@@ -1235,7 +1477,17 @@
                     <div class="attraction-name">${attraction.name}</div>
                     <div class="attraction-type">${attraction.type}</div>
                     <div class="attraction-distance">${attraction.distance} away</div>
+                    <button class="star-btn" title="Add to favorites">★</button>
                 `;
+                item.querySelector('.star-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    saveFavorite({
+                        name: attraction.name,
+                        lat: attraction.lat,
+                        lng: attraction.lng
+                    });
+                    renderRecentAndFavorites();
+                });
                 item.addEventListener('click', () => {
                     map.setView([attraction.lat, attraction.lng], 16);
 
@@ -1297,15 +1549,7 @@
 
         // --- FIX 6: Professional alert for geocoding failure ---
         async function planRoute(from, to) {
-            document.getElementById('routePanel').style.display = 'block';
-            
-            // Animate progress bar
-            const progressFill = document.getElementById('progressFill');
-            progressFill.style.width = '0%';
-            setTimeout(() => {
-                progressFill.style.width = '100%';
-            }, 100);
-
+            showGlobalLoading(true);
             try {
                 // Geocode locations using Nominatim
                 const fromCoords = await geocodeLocation(from);
@@ -1323,11 +1567,20 @@
                 }
 
                 // Create routing control with open-source routing
+                const allLocations = [from, ...waypoints.filter(wp => wp.trim()), to];
+                const coords = [];
+                for (let loc of allLocations) {
+                    const geo = await geocodeLocation(loc);
+                    if (!geo) {
+                        alert(`Could not find location: ${loc}`);
+                        showGlobalLoading(false);
+                        return;
+                    }
+                    coords.push(geo);
+                }
+
                 routeControl = L.Routing.control({
-                    waypoints: [
-                        L.latLng(fromCoords.lat, fromCoords.lng),
-                        L.latLng(toCoords.lat, toCoords.lng)
-                    ],
+                    waypoints: coords.map(c => L.latLng(c.lat, c.lng)),
                     routeWhileDragging: true,
                     addWaypoints: false,
                     createMarker: function(i, waypoint, n) {
@@ -1369,9 +1622,312 @@
                 console.error('Routing error:', error);
                 document.getElementById('routePanel').style.display = 'none';
             }
+            showGlobalLoading(false);
         }
 
         let lastUserLocation = null;
+
+        document.getElementById('layersBtn').addEventListener('click', () => {
+    // On mobile, open the sidebar to show layer options
+    if (window.innerWidth <= 768) {
+        sidebar.classList.toggle('open');
+        // Optionally scroll to the layers section
+        const layersSection = document.querySelector('.map-layers');
+        if (layersSection) layersSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        // On desktop, scroll to layers section in sidebar
+        const layersSection = document.querySelector('.map-layers');
+        if (layersSection) layersSection.scrollIntoView({ behavior: 'smooth' });
+    }
+});
+
+        // Save and load user preferences
+function savePreference(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) {}
+}
+function loadPreference(key, fallback) {
+    try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : fallback;
+    } catch (e) { return fallback; }
+}
+
+// Set active transport mode
+document.querySelectorAll('.transport-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === currentTransportMode);
+});
+// Set active route type
+document.querySelectorAll('.route-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.route === currentRouteType);
+});
+// Set active map layer
+document.querySelectorAll('.layer-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.layer === currentLayer);
+});
+
+        // Theme toggle logic
+        const themeToggle = document.getElementById('themeToggle');
+        function setTheme(mode) {
+            if (mode === 'light') {
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = '🌞';
+            } else {
+                document.body.classList.remove('light-mode');
+                themeToggle.textContent = '🌙';
+            }
+            savePreference('theme', mode);
+        }
+        themeToggle.addEventListener('click', () => {
+            const newMode = document.body.classList.contains('light-mode') ? 'dark' : 'light';
+            setTheme(newMode);
+        });
+        // On load, set theme from preference
+        setTheme(loadPreference('theme', 'dark'));
+
+        function saveRecentSearch(from, to) {
+    let recent = [];
+    try { recent = JSON.parse(localStorage.getItem('recentSearches')) || []; } catch {}
+    // Remove duplicates
+    recent = recent.filter(item => !(item.from === from && item.to === to));
+    recent.unshift({from, to});
+    if (recent.length > 5) recent = recent.slice(0, 5);
+    localStorage.setItem('recentSearches', JSON.stringify(recent));
+}
+function getRecentSearches() {
+    try { return JSON.parse(localStorage.getItem('recentSearches')) || []; } catch { return []; }
+}
+function saveFavorite(place) {
+    let favs = [];
+    try { favs = JSON.parse(localStorage.getItem('favoritePlaces')) || []; } catch {}
+    if (!favs.find(f => f.name === place.name && f.lat === place.lat && f.lng === place.lng)) {
+        favs.unshift(place);
+        if (favs.length > 5) favs = favs.slice(0, 5);
+        localStorage.setItem('favoritePlaces', JSON.stringify(favs));
+    }
+}
+function getFavorites() {
+    try { return JSON.parse(localStorage.getItem('favoritePlaces')) || []; } catch { return []; }
+}
+function renderRecentAndFavorites() {
+    // Recent
+    const recentList = document.getElementById('recentList');
+    const recent = getRecentSearches();
+    recentList.innerHTML = recent.length ? recent.map(item =>
+        `<div class="recent-item" data-from="${item.from}" data-to="${item.to}" tabindex="0" role="button">
+            <span>From: <b>${item.from}</b> → To: <b>${item.to}</b></span>
+        </div>`
+    ).join('') : '<div style="color:#94a3b8;font-size:12px;">No recent searches</div>';
+    // Click to fill inputs
+    recentList.querySelectorAll('.recent-item').forEach(item => {
+        item.addEventListener('click', () => {
+            document.getElementById('fromInput').value = item.dataset.from;
+            document.getElementById('toInput').value = item.dataset.to;
+            updateRoute();
+        });
+        item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') item.click();
+    });
+    });
+    // Favorites
+    const favoritesList = document.getElementById('favoritesList');
+    const favs = getFavorites();
+    favoritesList.innerHTML = favs.length ? favs.map(place =>
+        `<div class="favorite-item" data-lat="${place.lat}" data-lng="${place.lng}" data-name="${place.name}" tabindex="0" role="button">
+            <span>★ ${place.name}</span>
+        </div>`
+    ).join('') : '<div style="color:#94a3b8;font-size:12px;">No favorites yet</div>';
+    favoritesList.querySelectorAll('.favorite-item').forEach(item => {
+        item.addEventListener('click', () => {
+            map.setView([item.dataset.lat, item.dataset.lng], 16);
+        });
+        item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') item.click();
+    });
+    });
+}
+document.getElementById('shareRouteBtn').addEventListener('click', () => {
+    const from = encodeURIComponent(document.getElementById('fromInput').value);
+    const to = encodeURIComponent(document.getElementById('toInput').value);
+    const mode = encodeURIComponent(currentTransportMode);
+    const type = encodeURIComponent(currentRouteType);
+    const url = `${location.origin}${location.pathname}?from=${from}&to=${to}&mode=${mode}&type=${type}`;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Shareable route link copied to clipboard!');
+    }, () => {
+        prompt('Copy this link:', url);
+    });
+});
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const from = params.get('from');
+    const to = params.get('to');
+    const mode = params.get('mode');
+    const type = params.get('type');
+    if (from) document.getElementById('fromInput').value = decodeURIComponent(from);
+    if (to) document.getElementById('toInput').value = decodeURIComponent(to);
+    if (mode) {
+        currentTransportMode = mode;
+        document.querySelectorAll('.transport-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+    }
+    if (type) {
+        currentRouteType = type;
+        document.querySelectorAll('.route-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.route === type);
+        });
+    }
+    if (from && to) {
+        updateRoute();
+    }
+});
+document.getElementById('printRouteBtn').addEventListener('click', () => {
+    window.print();
+});
+
+function showGlobalLoading(show) {
+    document.getElementById('globalLoading').style.display = show ? 'flex' : 'none';
+}
+
+async function fetchWikipediaSummary(title) {
+    try {
+        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const data = await response.json();
+        return {
+            extract: data.extract,
+            image: data.thumbnail ? data.thumbnail.source : null,
+            url: data.content_urls ? data.content_urls.desktop.page : null
+        };
+    } catch {
+        return null;
+    }
+}
+
+// Register service worker for offline support
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(
+        reg => console.log('Service worker registered.', reg),
+        err => console.warn('Service worker registration failed.', err)
+    );
+}
+
+let waypoints = [];
+
+function renderWaypoints() {
+    const container = document.getElementById('waypointsContainer');
+    container.innerHTML = '';
+    waypoints.forEach((wp, idx) => {
+        const div = document.createElement('div');
+        div.className = 'input-group';
+        div.innerHTML = `
+            <label class="input-label">Stop ${idx + 1}</label>
+            <input type="text" class="input-field waypoint-input" data-idx="${idx}" value="${wp}" placeholder="Enter stop location">
+            <button class="control-btn remove-waypoint-btn" data-idx="${idx}" title="Remove stop" style="width:32px;height:32px;font-size:16px;margin-left:4px;">✖️</button>
+        `;
+        container.appendChild(div);
+    });
+    // Remove handlers
+    container.querySelectorAll('.remove-waypoint-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(btn.dataset.idx);
+            waypoints.splice(idx, 1);
+            renderWaypoints();
+        });
+    });
+    // Update handlers
+    container.querySelectorAll('.waypoint-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            waypoints[parseInt(input.dataset.idx)] = input.value;
+        });
+    });
+}
+document.getElementById('addWaypointBtn').addEventListener('click', () => {
+    waypoints.push('');
+    renderWaypoints();
+});
+renderWaypoints();
+
+document.getElementById('weatherBtn').addEventListener('click', async () => {
+    const panel = document.getElementById('weatherPanel');
+    const center = map.getCenter();
+    panel.style.display = 'block';
+    panel.innerHTML = 'Loading weather...';
+
+    // Open-Meteo API (no key required)
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${center.lat.toFixed(4)}&longitude=${center.lng.toFixed(4)}&current_weather=true`;
+
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Weather fetch failed');
+        const data = await res.json();
+        if (data.current_weather) {
+            const w = data.current_weather;
+            panel.innerHTML = `
+                <div style="font-size:18px;font-weight:600;margin-bottom:4px;">Weather</div>
+                <div style="font-size:32px;">${getWeatherEmoji(w.weathercode)}</div>
+                <div><b>${w.temperature}°C</b> &nbsp;|&nbsp; ${getWeatherDesc(w.weathercode)}</div>
+                <div style="font-size:13px;color:#94a3b8;margin-top:4px;">Wind: ${w.windspeed} km/h</div>
+                <button id="closeWeatherBtn" style="margin-top:10px;background:none;border:none;color:#f8fafc;font-size:16px;cursor:pointer;">Close</button>
+            `;
+            document.getElementById('closeWeatherBtn').onclick = () => panel.style.display = 'none';
+        } else {
+            panel.innerHTML = 'No weather data available.';
+        }
+    } catch {
+        panel.innerHTML = 'Unable to load weather.';
+    }
+});
+
+// Weather code helpers
+function getWeatherEmoji(code) {
+    if ([0].includes(code)) return '☀️';
+    if ([1,2,3].includes(code)) return '⛅';
+    if ([45,48].includes(code)) return '🌫️';
+    if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) return '🌦️';
+    if ([71,73,75,77,85,86].includes(code)) return '❄️';
+    if ([95,96,99].includes(code)) return '⛈️';
+    return '☁️';
+}
+function getWeatherDesc(code) {
+    const map = {
+        0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+        45: 'Fog', 48: 'Depositing rime fog',
+        51: 'Light drizzle', 53: 'Drizzle', 55: 'Dense drizzle',
+        56: 'Freezing drizzle', 57: 'Freezing drizzle',
+        61: 'Slight rain', 63: 'Rain', 65: 'Heavy rain',
+        66: 'Freezing rain', 67: 'Freezing rain',
+        71: 'Slight snow', 73: 'Snow', 75: 'Heavy snow', 77: 'Snow grains',
+        80: 'Rain showers', 81: 'Rain showers', 82: 'Violent rain showers',
+        85: 'Snow showers', 86: 'Heavy snow showers',
+        95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm'
+    };
+    return map[code] || 'Cloudy';
+}
+
+// Language selection
+const langSelect = document.getElementById('langSelect');
+langSelect.addEventListener('change', (e) => {
+    const lang = e.target.value;
+    setLanguage(lang);
+});
+
+function setLanguage(lang) {
+    if (translations[lang]) {
+        Object.keys(translations[lang]).forEach(key => {
+            const elements = document.querySelectorAll(`[data-i18n="${key}"]`);
+            elements.forEach(el => {
+                el.textContent = translations[lang][key];
+            });
+        });
+    }
+    savePreference('language', lang);
+}
+
+// On load, set language from preference
+setLanguage(loadPreference('language', 'en'));
+
     </script>
 </body>
 </html>
